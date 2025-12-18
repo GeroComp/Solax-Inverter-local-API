@@ -1,2 +1,51 @@
-# Solax-Inverter-local-API
-Integrace SolaX Local API do Home Assistant
+<p align="center">
+  <img src="custom_components/solax_local_api/images/solax_logo.png" alt="SolaX Logo" width="200"/>
+</p>
+
+# ☀️ SolaX Inverter Local API
+
+Tato integrace umožňuje lokální monitorování střídače **SolaX Hybrid G4** v Home Assistant.  
+Komunikace probíhá přímo přes lokální síť (LAN/WiFi), bez závislosti na Cloudu.
+
+---
+
+## ✨ Vlastnosti
+- **Rychlá odezva**: Aktualizace dat každých 6 sekund.  
+- **Efektivní sběr**: Využívá `DataUpdateCoordinator` pro hromadný odběr 45+ senzorů jedním dotazem.  
+- **Přehledné UI**: Automatické seskupení pod jedno zařízení s rozdělením na senzory a diagnostiku.  
+- **Nativní podpora**: Plně kompatibilní s Home Assistant Energy Dashboardem.  
+
+---
+
+## 📂 Struktura integrace
+- `__init__.py`: Inicializace a načtení integrace.  
+- `sensor.py`: Hlavní logika, výpočty a definice zařízení (Device Registry).  
+- `const.py`: Kompletní tabulka indexů a registrů pro senzory.  
+- `config_flow.py`: Uživatelské rozhraní pro zadání IP adresy a hesla.  
+- `manifest.json`: Metadata integrace.  
+- `translations/cs.json`: Česká lokalizace pro nastavení.  
+- `images/solax_logo.png`: Oficiální logo pro README a dokumentaci.  
+
+---
+
+## ⚙️ Instalace
+1. Zkopírujte složku `solax_local` do adresáře `custom_components`.  
+2. Restartujte Home Assistant.  
+3. V menu **Nastavení -> Zařízení a služby** klikněte na **Přidat integraci**.  
+4. Vyhledejte **SolaX Inverter Local**.  
+
+---
+
+## 📝 Konfigurace
+Během nastavování budete vyzváni k zadání:  
+- **IP adresa**: Lokální IP adresa střídače (např. `192.168.1.130`).  
+- **Heslo**: PIN kód natištěný na vašem WiFi dongle.  
+
+---
+
+## 📊 Hlavní sledované entity
+- **Výkon**: Celkový AC výkon, výkon z panelů (PV1+PV2), výkon baterie.  
+- **Baterie**: SoC (%), napětí, proud, teplota, BMS status.  
+- **Energie**: Celková výroba, dnešní zisky, přetoky do sítě.  
+- **Stavy**: Provozní režim střídače a mód baterie.  
+
