@@ -1,6 +1,5 @@
 """Constants for the SolaX Local API integration."""
 
-# Změněno z "solax_local" na "solax_local_api"
 DOMAIN = "solax_local_api"
 
 # Mapování režimů pro textové senzory
@@ -17,9 +16,8 @@ SOLAX_STATES = {
     7: "EPS Mode", 8: "Self Test", 9: "Idle", 10: "Standby"
 }
 
-# Kompletní tabulka všech senzorů
+# Kompletní tabulka senzorů
 # Formát: "id": ["Název", "Jednotka", "Device_Class", "Index", "Koeficient", "Typ_dat"]
-# Typy dat: 0=normal, 1=signed (+/-), 2=long, 3=text, 4=PV sum, 5=BMS, 7=Info field, 8=Firmware (ver)
 SENSOR_TYPES = {
     # --- AC Podrobnosti ---
     "acu1": ["L1 Voltage", "V", "voltage", 0, 0.1, 0],
@@ -49,7 +47,7 @@ SENSOR_TYPES = {
     "battery_voltage": ["Battery Voltage", "V", "voltage", 39, 0.01, 0],
     "battery_current": ["Battery Current", "A", "current", 40, 0.01, 1],
     "battery_power": ["Battery Power", "W", "power", 41, 1, 1],
-    "battery_soc": ["Battery SoC", "%", None, 103, 1, 0],
+    "battery_soc": ["Battery SoC", "%", "battery", 103, 1, 0],
     "battery_remain": ["Battery Remain Energy", "kWh", "energy", 106, 0.1, 0],
     "battery_temperature": ["Battery Temperature", "°C", "temperature", 105, 1, 0],
     "battery_bms": ["Battery BMS status", None, None, 45, 1, 5],
@@ -70,22 +68,20 @@ SENSOR_TYPES = {
     # --- Celkové hodnoty pro Energy Panel ---
     "solar_total": ["Solar energy total", "kWh", "energy", (81, 80), 0.1, 2],
     "grid_out_total": ["Grid out total", "kWh", "energy", (87, 86), 0.01, 2],
-    "grid_in_total": ["Grid in total", "kWh", "energy", (89, 88), 0.01, 2],
-    "consumption_total": ["Consumption total", "kWh", "energy", 88, 0.01, 0],
+    "grid_in_total": ["Grid in today total", "kWh", "energy", (89, 88), 0.01, 2],
+    "consumption_total": ["Consumption total", "kWh", "energy", (89, 88), 0.01, 2], # Opraven index na long
     "battery_out_total": ["Battery discharge total", "kWh", "energy", (75, 74), 0.1, 2],
     "battery_in_total": ["Battery charge total", "kWh", "energy", (77, 76), 0.1, 2],
 
     # --- Módy a Informace o střídači ---
     "mode": ["Battery Operation Mode", None, None, 168, 1, 3],
     "state": ["Inverter Operation Mode", None, None, 19, 1, 3],
-    "type": ["Inverter Type", None, None, "type", 1, 6],
-    "inverter_sn": ["Inverter SN", None, None, 2, 1, 7],
+    "type": ["Inverter Type", None, None, 2, 1, 7], # Opraven index na Information[2]
+    "inverter_sn": ["Inverter SN", None, None, 2, 1, 7], 
     "nominal_power": ["Inverter Nominal Power", "kW", None, 0, 1, 7],
-    
-    # NOVÝ SENZOR PRO FIRMWARE (dtype 8)
     "firmware": ["SolaX Firmware Version", None, None, 0, 1, 8],
 
-    # --- Testovací parametry ---
+    # --- Teploty ---
     "inverter_temperature_inner": ["Inverter Temperature inner", "°C", "temperature", 46, 1, 0],
     "inverter_temperature": ["Inverter Temperature", "°C", "temperature", 54, 1, 0],
 }
