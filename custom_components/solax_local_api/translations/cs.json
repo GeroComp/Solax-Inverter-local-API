@@ -1,1 +1,21 @@
-
+{
+  "title": "SolaX Local API",
+  "config": {
+    "step": {
+      "user": {
+        "title": "SolaX Power: Lokální připojení",
+        "description": "Zadejte údaje pro přímé spojení s vaším střídačem přes lokální síť.",
+        "data": {
+          "ip": "IP adresa střídače",
+          "password": "Heslo / PIN (WiFi Dongle)",
+          "scan_interval": "Interval aktualizace (v sekundách)"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Nepodařilo se připojit ke střídači.",
+      "invalid_auth": "Neplatné heslo.",
+      "unknown": "Neočekávaná chyba."
+    }
+  }
+}
