@@ -1,8 +1,10 @@
 <p align="center">
-  <img src="custom_components/solax_local_api/images/solax_logo.png" alt="SolaX Logo" width="200"/>
+  <img src="custom_components/solax_local_api/images/logo.png" alt="SolaX Logo" width="200"/>
 </p>
 
-# ☀️ SolaX Inverter Local API
+# <img src="custom_components/solax_local_api/images/icon.png" alt="SolaX Logo" width="30"/> SolaX Inverter Local API
+
+
 
 Tato integrace umožňuje lokální monitorování střídače **SolaX Hybrid G4** v Home Assistant.  
 Komunikace probíhá přímo přes lokální síť (LAN/WiFi), bez závislosti na Cloudu.
