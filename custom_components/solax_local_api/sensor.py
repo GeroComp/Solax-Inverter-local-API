@@ -1,6 +1,7 @@
 import logging
 from datetime import timedelta
 import async_timeout
+import asyncio
 
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.components.sensor import (
@@ -34,7 +35,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
     async_add_entities(entities)
 
 class SolaxUpdateCoordinator(DataUpdateCoordinator):
-    """Třída pro stahování dat ze střídače."""
+    """Třída pro stahování dat ze střídače přes lokální API."""
 
     def __init__(self, hass, ip, pwd, scan_interval):
         super().__init__(
@@ -50,20 +51,20 @@ class SolaxUpdateCoordinator(DataUpdateCoordinator):
         payload = f"optType=ReadRealTimeData&pwd={self.pwd}"
         
         try:
-            async with async_timeout.timeout(5):
+            async with async_timeout.timeout(10):
                 async with self.session.post(url, data=payload) as response:
                     if response.status != 200:
                         raise UpdateFailed(f"Chyba střídače: {response.status}")
                     
                     data = await response.json(content_type=None)
-                    if not data:
-                        raise UpdateFailed("Prázdná data ze střídače")
+                    if not data or "Data" not in data:
+                        raise UpdateFailed("Neúplná data ze střídače")
                     return data
         except Exception as err:
             raise UpdateFailed(f"Chyba komunikace: {err}")
 
 class SolaxSensor(CoordinatorEntity, SensorEntity):
-    """Senzor Solax bez odkazu na webové rozhraní."""
+    """Reprezentace senzoru SolaX."""
 
     def __init__(self, coordinator, sensor_key, info, entry):
         """Inicializace senzoru."""
@@ -85,12 +86,19 @@ class SolaxSensor(CoordinatorEntity, SensorEntity):
         elif unit == "W":
             self._attr_state_class = SensorStateClass.MEASUREMENT
             self._attr_device_class = SensorDeviceClass.POWER
+        elif unit == "%":
+            # Pro zobrazení ikony v hlavičce zařízení
+            self._attr_device_class = SensorDeviceClass.BATTERY
+            self._attr_state_class = SensorStateClass.MEASUREMENT
         elif unit == "V":
             self._attr_device_class = SensorDeviceClass.VOLTAGE
+            self._attr_state_class = SensorStateClass.MEASUREMENT
         elif unit == "A":
             self._attr_device_class = SensorDeviceClass.CURRENT
+            self._attr_state_class = SensorStateClass.MEASUREMENT
         elif unit == "°C":
             self._attr_device_class = SensorDeviceClass.TEMPERATURE
+            self._attr_state_class = SensorStateClass.MEASUREMENT
         
         # Diagnostické senzory
         diagnostic_keys = {
@@ -103,7 +111,7 @@ class SolaxSensor(CoordinatorEntity, SensorEntity):
 
     @property
     def device_info(self) -> DeviceInfo:
-        """Informace o zařízení (zde je odstraněn configuration_url)."""
+        """Informace o zařízení včetně odkazu na webové rozhraní."""
         fw_version = "Načítání..."
         model_type = "Hybrid Inverter"
         sn_value = None
@@ -123,12 +131,13 @@ class SolaxSensor(CoordinatorEntity, SensorEntity):
             model=model_type,
             sw_version=fw_version,
             serial_number=sn_value,
-            # Parametr configuration_url je odstraněn pro skrytí tlačítka v UI
+            # Tímto se aktivuje modré tlačítko/odkaz v Home Assistant UI
+            configuration_url=f"http://{self.coordinator.ip}",
         )
 
     @property
     def native_value(self):
-        """Zpracování a výpočet hodnoty ze syrových dat."""
+        """Zpracování hodnoty ze syrových dat."""
         if not self.coordinator.data:
             return None
             
@@ -162,7 +171,7 @@ class SolaxSensor(CoordinatorEntity, SensorEntity):
 
     @property
     def icon(self):
-        """Přiřazení ikon podle klíče senzoru."""
+        """Přiřazení ikon."""
         key = self._key.lower()
         if "pv" in key: return "mdi:solar-power-variant"
         if "battery_soc" in key: return "mdi:battery-high"
