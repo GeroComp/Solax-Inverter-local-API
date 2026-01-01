@@ -6,8 +6,8 @@
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg?style=for-the-badge)](https://github.com/hacs/integration)
 [![version](https://img.shields.io/github/v/release/GeroComp/Solax-local-API?style=for-the-badge)](https://github.com/GeroComp/Solax-local-API/releases)
+![Discovery](https://img.shields.io/badge/discovery-DHCP-orange?style=for-the-badge)
 ![License](https://img.shields.io/github/license/GeroComp/Solax-local-API?style=for-the-badge)
-
 
 Tato integrace umožňuje lokální monitorování střídače **SolaX Hybrid G4** v Home Assistant.  
 Komunikace probíhá přímo přes lokální síť (LAN/WiFi), bez závislosti na cloudu a s bleskovou odezvou.
@@ -15,11 +15,22 @@ Komunikace probíhá přímo přes lokální síť (LAN/WiFi), bez závislosti n
 ---
 
 ## ✨ Vlastnosti
+- **Zero-Config Discovery**: Automatická detekce střídače v síti (není třeba hledat IP adresu).
 - **Rychlá odezva**: Aktualizace dat každých 6–10 sekund (nastavitelné).
 - **Lokální soukromí**: Data neopouštějí vaši síť.
 - **Efektivní sběr**: Využívá `DataUpdateCoordinator` pro hromadný odběr 45+ senzorů jedním dotazem.
 - **Dynamické ikony**: Ikony se mění podle stavu baterie, výroby panelů a směru toku energie.
 - **Nativní podpora**: Plně kompatibilní s Home Assistant Energy Dashboardem.
+
+---
+
+## 🔍 Automatické vyhledávání (Discovery)
+Integrace podporuje funkci **Auto-Discovery**. Jakmile do své sítě připojíte střídač SolaX s Pocket Wi-Fi donglem, Home Assistant jej sám rozpozná. 
+
+V sekci **Zařízení a služby** uvidíte nové oznámení:
+> **Zjištěno: SolaX** > *SolaX Power*
+
+Stačí kliknout na **Nastavit** a integrace automaticky vyplní IP adresu. Vy zadáte pouze své heslo.
 
 ---
 
@@ -43,43 +54,37 @@ Pro správné zobrazení statistik v Energy panelu použijte tyto entity:
 
 ### Manuální instalace
 1. Stáhněte si repozitář a zkopírujte složku `solax_local_api` do adresáře `custom_components` ve vaší instalaci Home Assistant.
-2. Restartujte Home Assistant.
-3. V menu **Nastavení -> Zařízení a služby** klikněte na **Přidat integraci**.
-4. Vyhledejte **SolaX Inverter Local API**.
+2. **Restartujte Home Assistant.**
+3. Počkejte několik sekund – střídač by měl být automaticky detekován (vyskočí upozornění).
+4. Pokud se tak nestane, jděte do **Nastavení -> Zařízení a služby -> Přidat integraci** a vyhledejte **SolaX Inverter Local API**.
 
 ---
 
 ## 📝 Konfigurace
 Během nastavování budete vyzváni k zadání:
-- **IP adresa**: Lokální IP adresa střídače v rámci vaší sítě.
-- **Heslo / PIN**: PIN kód (obvykle natištěný na WiFi dongle) nebo sériové číslo dongle (dle verze firmware).
-- **Interval aktualizace**: Doporučeno 6–10 sekund (příliš nízký interval může přetěžovat API dongle).
+- **IP adresa**: Předvyplněno automaticky při detekci, jinak zadejte ručně.
+- **Heslo / PIN**: Heslo pro přihlášení k Pocket Wi-Fi (obvykle natištěné na donglu).
+- **Interval aktualizace**: Doporučeno 6–10 sekund.
 
 ---
 
 ## 📊 Hlavní sledované entity
-- **Výkon**: Celkový AC výkon, výkon z panelů (PV1+PV2), okamžitý výkon baterie (včetně směru toku).
-- **Baterie**: SoC (%), napětí, proud, teplota, BMS status (OK/Chyba).
-- **Energie**: Celková výroba, dnešní zisky, přetoky do sítě (vše s podporou statistik).
-- **Stavy**: Provozní režim střídače (Self-use, Feed-in priority, atd.) a systémový status (Normal, Fault, Wait).
+- **Výkon**: Celkový AC výkon, výkon z panelů (PV1+PV2), okamžitý výkon baterie.
+- **Baterie**: SoC (%), napětí, proud, teplota, BMS status.
+- **Energie**: Celková výroba, dnešní zisky, přetoky do sítě.
+- **Stavy**: Provozní režim střídače a systémový status (Normal, Fault, Wait).
 - **Diagnostika**: Sériové číslo střídače, verze firmware a nominální výkon.
 
 ---
 
 ## 📂 Struktura projektu
-- `__init__.py`: Inicializace asynchronních platforem.
-- `sensor.py`: Hlavní logika, dynamické ikony a zpracování 32-bitových registrů.
-- `const.py`: Definice mapování indexů a typů dat (Signed, Long, PV sum).
-- `config_flow.py`: Uživatelské rozhraní pro nastavení s validací spojení.
-- `manifest.json`: Metadata a definice závislostí.
-- `translations/cs.json`: Kompletní česká lokalizace.
+- `__init__.py`: Inicializace a správa instance zařízení.
+- `sensor.py`: Logika senzorů a zpracování 32-bitových registrů.
+- `const.py`: Definice registrů, koeficientů a mapování stavů.
+- `config_flow.py`: UI pro nastavení a DHCP discovery logika.
+- `manifest.json`: Metadata a definice pro automatické vyhledávání.
+- `translations/`: Kompletní česká a anglická lokalizace.
 
 ---
 
-## 🚀 Roadmap
-- [ ] Podpora pro více střídačů v jedné síti.
-- [ ] Implementace ovládacích prvků (Switch pro změnu pracovního módu).
-- [ ] Rozšířená diagnostika pro třífázové systémy (napětí na jednotlivých fázích).
-
----
 **Disclaimer**: Tato integrace není oficiálním produktem společnosti SolaX Power. Použití je na vlastní riziko.
