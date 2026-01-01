@@ -1,0 +1,25 @@
+{
+  "title": "SolaX Local API",
+  "config": {
+    "step": {
+      "user": {
+        "title": "SolaX Power: Local Connection",
+        "description": "Enter the credentials for direct connection to your inverter via local network.",
+        "data": {
+          "host": "Inverter IP Address",
+          "password": "Password / PIN (WiFi Dongle)",
+          "scan_interval": "Update interval (seconds)"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to the inverter.",
+      "invalid_auth": "Invalid password.",
+      "unknown": "Unexpected error."
+    },
+    "abort": {
+      "not_solax_device": "Detected device is not a SolaX Pocket Wi-Fi.",
+      "already_configured": "This inverter is already configured."
+    }
+  }
+}

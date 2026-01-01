@@ -62,6 +62,13 @@ class SolaxConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self._abort_if_unique_id_configured()
 
         self._discovered_host = discovery_info.ip
+
+        # --- TATO ČÁST PŘIDÁVÁ HEZČÍ NÁZEV DO OKNA "ZJIŠTĚNO" ---
+        self.context.update({
+            "title_placeholders": {"name": "SolaX Power"}
+        })
+        # -------------------------------------------------------
+
         return await self.async_step_user()
 
     async def async_step_user(self, user_input=None):

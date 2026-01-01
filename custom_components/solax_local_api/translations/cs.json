@@ -6,7 +6,7 @@
         "title": "SolaX Power: Lokální připojení",
         "description": "Zadejte údaje pro přímé spojení s vaším střídačem přes lokální síť.",
         "data": {
-          "ip": "IP adresa střídače",
+          "host": "IP adresa střídače",
           "password": "Heslo / PIN (WiFi Dongle)",
           "scan_interval": "Interval aktualizace (v sekundách)"
         }
@@ -16,6 +16,10 @@
       "cannot_connect": "Nepodařilo se připojit ke střídači.",
       "invalid_auth": "Neplatné heslo.",
       "unknown": "Neočekávaná chyba."
+    },
+    "abort": {
+      "not_solax_device": "Detekované zařízení není Pocket Wi-Fi.",
+      "already_configured": "Tento střídač již máte nastaven."
     }
   }
 }
