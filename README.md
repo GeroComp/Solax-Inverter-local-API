@@ -9,7 +9,7 @@
 ![Discovery](https://img.shields.io/badge/discovery-DHCP-orange?style=for-the-badge)
 ![License](https://img.shields.io/github/license/GeroComp/Solax-local-API?style=for-the-badge)
 
-Tato integrace umožňuje lokální monitorování střídače **SolaX Hybrid G4** v Home Assistant.  
+Tato integrace umožňuje lokální monitorování střídače **SolaX Hybrid G4** v Home Assistant.
 Komunikace probíhá přímo přes lokální síť (LAN/WiFi), bez závislosti na cloudu a s bleskovou odezvou.
 
 ---
@@ -25,12 +25,16 @@ Komunikace probíhá přímo přes lokální síť (LAN/WiFi), bez závislosti n
 ---
 
 ## 🔍 Automatické vyhledávání (Discovery)
-Integrace podporuje funkci **Auto-Discovery**. Jakmile do své sítě připojíte střídač SolaX s Pocket Wi-Fi donglem, Home Assistant jej sám rozpozná. 
+Integrace podporuje funkci **Auto-Discovery**. Jakmile do své sítě připojíte střídač SolaX s Pocket Wi-Fi donglem, Home Assistant jej sám rozpozná.
 
 V sekci **Zařízení a služby** uvidíte nové oznámení:
 > **Zjištěno: SolaX** > *SolaX Power*
 
-Stačí kliknout na **Nastavit** a integrace automaticky vyplní IP adresu. Vy zadáte pouze své heslo.
+Klikněte na tlačítko **Přidat** (Configure). Integrace automaticky předvyplní zjištěnou IP adresu, vy pouze zadáte přístupové heslo.
+
+> [!NOTE]
+> **Detekce střídače v síti může trvat 1 až 2 minuty.**
+> Pokud se zařízení ani po této době nezobrazí, přidejte integraci ručně a zadejte IP adresu Vašeho střídače přímo.
 
 ---
 
