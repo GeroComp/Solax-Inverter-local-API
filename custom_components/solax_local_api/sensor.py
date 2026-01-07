@@ -187,15 +187,49 @@ class SolaxSensor(CoordinatorEntity, SensorEntity):
         key = self._key.lower()
         name = (self._attr_name or "").lower()
         val = self.native_value
+        unit = self._attr_native_unit_of_measurement
 
-        # --- 1. DYNAMICKÉ IKONY (BATERIE) ---
+        # --- 1. DYNAMICKÁ BATERIE (SOC %) ---
+        # Zobrazí mdi:battery-10 až mdi:battery-100 podle stavu
+        if "battery" in key and "soc" in key:
+            if val is None: return "mdi:battery-unknown"
+            try:
+                soc = int(val)
+                if soc >= 100: return "mdi:battery"
+                if soc <= 5: return "mdi:battery-outline"
+                # Zaokrouhlení na desítky pro MDI ikony (10, 20... 90)
+                rounded = round(soc / 10) * 10
+                return f"mdi:battery-{rounded}"
+            except (ValueError, TypeError):
+                return "mdi:battery-50"
+
+        # --- 2. BATERIE - Napětí / Proud / Výkon ---
         if "battery_power" in key or "battery_current" in key:
             if val is None: return "mdi:battery-unknown"
+            
+            is_idle = False
+            try:
+                state_def = SENSOR_TYPES.get("state") 
+                if state_def and self.coordinator.data:
+                    state_idx = state_def[3] 
+                    data_list = self.coordinator.data.get("Data", [])
+                    if len(data_list) > state_idx:
+                        raw_state_val = data_list[state_idx]
+                        if raw_state_val in [0, 1, 3, 9, 10]:
+                            is_idle = True
+            except Exception:
+                pass 
+
+            if is_idle: return "mdi:battery-off-outline"
+            if val == 0: return "mdi:battery-outline"
             if val < 0: return "mdi:battery-arrow-down"
             elif val > 0: return "mdi:battery-arrow-up-outline"
-            else: return "mdi:battery-off-outline"
         
-        # --- 2. BATERIE - ZBÝVAJÍCÍ ENERGIE (vs 11.5 kWh) ---
+        # Baterie - Napětí (Blesk v baterii místo vlnovky)
+        if "battery" in key and "voltage" in key:
+            return "mdi:battery-charging"
+
+        # --- 3. BATERIE - Ostatní ---
         if "remain" in key or "remain" in name:
             BATTERY_CAPACITY_KWH = 11.5 
             if val is None: return "mdi:battery-unknown"
@@ -207,7 +241,6 @@ class SolaxSensor(CoordinatorEntity, SensorEntity):
             except (ValueError, TypeError):
                 return "mdi:battery-alert"
 
-        # --- 3. BATERIE - CHARGE / DISCHARGE ---
         if "discharge" in key or "discharge" in name:
             return "mdi:battery-arrow-down"
         if "charge" in key or "charge" in name:
@@ -226,7 +259,7 @@ class SolaxSensor(CoordinatorEntity, SensorEntity):
         if "incl" in name and "battery" in name:
             return "mdi:home-battery"
 
-        # --- 6. SÍŤ (GRID) - FEED-IN & IMPORT/EXPORT ---
+        # --- 6. SÍŤ (GRID) ---
         if "feed" in key or "feed" in name:
             if val is None: return "mdi:transmission-tower-off"
             if val < 0: return "mdi:transmission-tower-export"
@@ -235,46 +268,79 @@ class SolaxSensor(CoordinatorEntity, SensorEntity):
 
         if "grid" in key and "in" in key:
             return "mdi:transmission-tower-export"
-
         if "grid" in key and "out" in key:
             return "mdi:transmission-tower-import"
 
-        # --- 7. DYNAMICKÉ TEPLOTY (UPRAVENÁ LOGIKA) ---
+        # --- 7. DYNAMICKÉ TEPLOTY ---
         if "temperature" in key:
             if val is None: return "mdi:thermometer-off"
             try:
                 temp = float(val)
-                
-                # Pokud je teplota přesně 0 a jde o střídač -> vypnuto (přeškrtnutý teploměr)
                 if temp == 0 and "inverter" in key: return "mdi:thermometer-off"
-
-                if temp < 0: return "mdi:thermometer-minus" # Pod 0
-                if temp < 30: return "mdi:thermometer-low"  # 0 - 30
-                if temp < 40: return "mdi:thermometer"      # 30 - 40
-                if temp < 60: return "mdi:thermometer-high" # 40 - 60
-                return "mdi:thermometer-alert"              # Nad 60
+                if temp < 0: return "mdi:thermometer-minus"
+                if temp < 30: return "mdi:thermometer-low"
+                if temp < 40: return "mdi:thermometer"
+                if temp < 60: return "mdi:thermometer-high"
+                return "mdi:thermometer-alert"
             except (ValueError, TypeError):
                 return "mdi:thermometer"
 
-        # --- 8. DIAGNOSTIKA A INFO ---
+        # --- 8. DIAGNOSTIKA ---
         if "sn" in key: return "mdi:barcode"
-        
         if "firmware" in key: return "mdi:chip"
-        
         if "type" in key: return "mdi:solar-power"
         if "bms" in key: return "mdi:battery-heart-variant"
         if "mode" in key or "state" in key: return "mdi:state-machine"
         if "nominal" in key: return "mdi:lightning-bolt-circle"
 
-        # --- 9. OBECNÉ IKONY ---
-        if "pv" in key: return "mdi:solar-power-variant"
-        if "battery_soc" in key: return "mdi:battery-high"
-        
-        if "battery" in key: return "mdi:battery-charging"
-        
-        if "grid" in key: return "mdi:transmission-tower"
-        
-        if "frequency" in key or "hz" in (self._attr_native_unit_of_measurement or ""): 
+        # --- SPECIÁLNÍ: Solar energy total ---
+        if "solar" in name and "total" in name:
+            return "mdi:solar-power"
+
+        # --- FVE (PV) - KOMPLETNÍ LOGIKA S NOČNÍM REŽIMEM ---
+        if "pv" in key:
+            
+            # 1. Zjistíme, jestli je "noc" (výkon je 0)
+            is_night = False
+            try:
+                if val is not None and float(val) == 0 and "power" in key:
+                    is_night = True
+            except (ValueError, TypeError):
+                pass
+
+            # 2. PV1 (String 1)
+            if "pv1" in key:
+                if "current" in key: return "mdi:current-dc"      
+                if "power" in key and is_night: return "mdi:solar-panel-large" # Noční režim (jen mřížka)
+                return "mdi:solar-power-variant-outline" # Denní režim (mřížka + slunce)
+
+            # 3. PV2 (String 2)
+            if "pv2" in key:
+                if "current" in key: return "mdi:current-dc"      
+                if "power" in key and is_night: return "mdi:solar-panel" # Noční režim (jen stojan)
+                return "mdi:solar-power-variant" # Denní režim (stojan + slunce)
+            
+            # 4. Celkový výkon (Total PV Power)
+            if "power" in key:
+                if is_night: return "mdi:solar-power-variant" # V noci spí
+                return "mdi:solar-power-variant-outline"    # Ve dne vyrábí
+
+            return "mdi:solar-panel" 
+
+        # --- 9. SPECIFICKÉ IKONY PRO AC VELIČINY ---
+        if "frequency" in key or unit == "Hz":
+            return "mdi:waveform"
+        if "current" in key or unit == "A":
+            return "mdi:current-ac"
+        if "voltage" in key or unit == "V":
             return "mdi:sine-wave"
+        if "power" in key or unit == "W":
+             return "mdi:flash"
+
+        # --- 10. OBECNÉ IKONY (FALLBACK) ---
+        if "pv" in key: return "mdi:solar-power-variant"
+        if "battery_soc" in key: return "mdi:battery-50" # Fallback pro staré názvy
+        if "battery" in key: return "mdi:battery-charging"
+        if "grid" in key: return "mdi:transmission-tower"
         
         return super().icon
