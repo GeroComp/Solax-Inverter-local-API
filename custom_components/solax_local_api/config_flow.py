@@ -9,14 +9,14 @@ from homeassistant.components import dhcp
 from homeassistant.const import CONF_HOST, CONF_PASSWORD, CONF_SCAN_INTERVAL
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
-from .const import DOMAIN
+from .const import DOMAIN, DEFAULT_SCAN_INTERVAL
 
 _LOGGER = logging.getLogger(__name__)
 
 STEP_USER_DATA_SCHEMA = vol.Schema({
     vol.Required(CONF_HOST): str,
     vol.Required(CONF_PASSWORD): str,
-    vol.Optional(CONF_SCAN_INTERVAL, default=6): int,
+    vol.Optional(CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL): int,
 })
 
 class SolaxConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -30,7 +30,6 @@ class SolaxConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def _verify_pocket_wifi(self, ip_address):
         """Ověří zařízení kontrolou stránky /login."""
         session = async_get_clientsession(self.hass)
-        # Cílíme přímo na login stránku z vašeho screenshotu
         url = f"http://{ip_address}/login"
         
         try:
@@ -38,7 +37,6 @@ class SolaxConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 response = await session.get(url)
                 if response.status == 200:
                     text = await response.text()
-                    # Kontrola titulku "Pocket Wi-Fi", který vidíte v prohlížeči
                     if "Pocket Wi-Fi" in text:
                         _LOGGER.debug("SolaX Pocket Wi-Fi potvrzen na %s", ip_address)
                         return True
@@ -50,7 +48,7 @@ class SolaxConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """Automatický záchyt z DHCP."""
         hostname = (discovery_info.hostname or "").lower()
         
-        # Filtrujeme pouze zařízení od Espressif (výrobce čipu Pocket Wi-Fi)
+        # Filtrujeme pouze zařízení od Espressif
         if "espressif" not in hostname:
             return self.async_abort(reason="not_solax_device")
 
@@ -63,11 +61,9 @@ class SolaxConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         self._discovered_host = discovery_info.ip
 
-        # --- TATO ČÁST PŘIDÁVÁ HEZČÍ NÁZEV DO OKNA "ZJIŠTĚNO" ---
         self.context.update({
             "title_placeholders": {"name": "SolaX Power"}
         })
-        # -------------------------------------------------------
 
         return await self.async_step_user()
 

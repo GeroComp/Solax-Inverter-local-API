@@ -2,6 +2,12 @@
 
 DOMAIN = "solax_local_api"
 
+# Definice platforem
+PLATFORMS = ["sensor"]
+
+# Výchozí interval obnovy dat (sekundy)
+DEFAULT_SCAN_INTERVAL = 10
+
 # Mapování režimů pro textové senzory
 SOLAX_MODES = {
     0: "Self Use Mode", 
@@ -36,7 +42,10 @@ SENSOR_TYPES = {
     "acp1": ["L1 Power", "W", "power", 6, 1, 1],
     "acp2": ["L2 Power", "W", "power", 7, 1, 1],
     "acp3": ["L3 Power", "W", "power", 8, 1, 1],
-    "ac_power": ["Total AC Power", "W", "power", 9, 1, 1],
+    
+    # Inverter Active Power
+    "ac_power": ["Inverter Active Power", "W", "power", 9, 1, 1],
+    
     "acf1": ["L1 Frequency", "Hz", "frequency", 16, 0.01, 0],
     "acf2": ["L2 Frequency", "Hz", "frequency", 17, 0.01, 0],
     "acf3": ["L3 Frequency", "Hz", "frequency", 18, 0.01, 0],

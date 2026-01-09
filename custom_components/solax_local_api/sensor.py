@@ -1,7 +1,6 @@
 import logging
 from datetime import timedelta
 import async_timeout
-import asyncio
 
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.components.sensor import (
@@ -11,7 +10,7 @@ from homeassistant.components.sensor import (
 )
 from homeassistant.helpers.update_coordinator import (
     DataUpdateCoordinator, 
-    UpdateFailed,
+    UpdateFailed, 
     CoordinatorEntity
 )
 from homeassistant.helpers.entity import DeviceInfo
@@ -83,12 +82,6 @@ class SolaxSensor(CoordinatorEntity, SensorEntity):
         self._attr_unique_id = f"solax_{sensor_key}_{entry.entry_id}"
         self._attr_native_unit_of_measurement = info[1]
 
-        # --- OPRAVA NÁZVU (Rename pojistka) ---
-        if self._attr_name == "Grid in today total":
-            self._attr_name = "Grid Import Total"
-        elif self._attr_name == "Grid out today total": 
-            self._attr_name = "Grid Export Total"
-        
         # Automatické nastavení DeviceClass a StateClass
         unit = info[1]
         if unit == "kWh":
@@ -190,14 +183,13 @@ class SolaxSensor(CoordinatorEntity, SensorEntity):
         unit = self._attr_native_unit_of_measurement
 
         # --- 1. DYNAMICKÁ BATERIE (SOC %) ---
-        # Zobrazí mdi:battery-10 až mdi:battery-100 podle stavu
         if "battery" in key and "soc" in key:
             if val is None: return "mdi:battery-unknown"
             try:
                 soc = int(val)
-                if soc >= 100: return "mdi:battery"
+                if soc >= 95: return "mdi:battery"
                 if soc <= 5: return "mdi:battery-outline"
-                # Zaokrouhlení na desítky pro MDI ikony (10, 20... 90)
+                
                 rounded = round(soc / 10) * 10
                 return f"mdi:battery-{rounded}"
             except (ValueError, TypeError):
@@ -225,7 +217,7 @@ class SolaxSensor(CoordinatorEntity, SensorEntity):
             if val < 0: return "mdi:battery-arrow-down"
             elif val > 0: return "mdi:battery-arrow-up-outline"
         
-        # Baterie - Napětí (Blesk v baterii místo vlnovky)
+        # Baterie - Napětí
         if "battery" in key and "voltage" in key:
             return "mdi:battery-charging"
 
@@ -274,9 +266,26 @@ class SolaxSensor(CoordinatorEntity, SensorEntity):
         # --- 7. DYNAMICKÉ TEPLOTY ---
         if "temperature" in key:
             if val is None: return "mdi:thermometer-off"
+            
+            is_idle = False
+            if "inverter" in key:
+                try:
+                    state_def = SENSOR_TYPES.get("state")
+                    if state_def and self.coordinator.data:
+                        state_idx = state_def[3]
+                        data_list = self.coordinator.data.get("Data", [])
+                        if len(data_list) > state_idx:
+                            raw_state_val = data_list[state_idx]
+                            if raw_state_val in [0, 1, 3, 9, 10]:
+                                is_idle = True
+                except Exception:
+                    pass
+
+            if is_idle:
+                return "mdi:thermometer-off"
+
             try:
                 temp = float(val)
-                if temp == 0 and "inverter" in key: return "mdi:thermometer-off"
                 if temp < 0: return "mdi:thermometer-minus"
                 if temp < 30: return "mdi:thermometer-low"
                 if temp < 40: return "mdi:thermometer"
@@ -300,7 +309,6 @@ class SolaxSensor(CoordinatorEntity, SensorEntity):
         # --- FVE (PV) - KOMPLETNÍ LOGIKA S NOČNÍM REŽIMEM ---
         if "pv" in key:
             
-            # 1. Zjistíme, jestli je "noc" (výkon je 0)
             is_night = False
             try:
                 if val is not None and float(val) == 0 and "power" in key:
@@ -308,26 +316,26 @@ class SolaxSensor(CoordinatorEntity, SensorEntity):
             except (ValueError, TypeError):
                 pass
 
-            # 2. PV1 (String 1)
             if "pv1" in key:
-                if "current" in key: return "mdi:current-dc"      
-                if "power" in key and is_night: return "mdi:solar-panel-large" # Noční režim (jen mřížka)
-                return "mdi:solar-power-variant-outline" # Denní režim (mřížka + slunce)
+                if "current" in key: return "mdi:current-dc"       
+                if "power" in key and is_night: return "mdi:solar-panel-large"
+                return "mdi:solar-power-variant-outline"
 
-            # 3. PV2 (String 2)
             if "pv2" in key:
-                if "current" in key: return "mdi:current-dc"      
-                if "power" in key and is_night: return "mdi:solar-panel" # Noční režim (jen stojan)
-                return "mdi:solar-power-variant" # Denní režim (stojan + slunce)
+                if "current" in key: return "mdi:current-dc"       
+                if "power" in key and is_night: return "mdi:solar-panel"
+                return "mdi:solar-power-variant"
             
-            # 4. Celkový výkon (Total PV Power)
             if "power" in key:
-                if is_night: return "mdi:solar-power-variant" # V noci spí
-                return "mdi:solar-power-variant-outline"    # Ve dne vyrábí
+                if is_night: return "mdi:solar-power-variant"
+                return "mdi:solar-power-variant-outline"
 
             return "mdi:solar-panel" 
 
         # --- 9. SPECIFICKÉ IKONY PRO AC VELIČINY ---
+        if "ac_power" in key:
+             return "mdi:lightning-bolt-circle"
+
         if "frequency" in key or unit == "Hz":
             return "mdi:waveform"
         if "current" in key or unit == "A":
@@ -339,7 +347,7 @@ class SolaxSensor(CoordinatorEntity, SensorEntity):
 
         # --- 10. OBECNÉ IKONY (FALLBACK) ---
         if "pv" in key: return "mdi:solar-power-variant"
-        if "battery_soc" in key: return "mdi:battery-50" # Fallback pro staré názvy
+        if "battery_soc" in key: return "mdi:battery-50"
         if "battery" in key: return "mdi:battery-charging"
         if "grid" in key: return "mdi:transmission-tower"
         
