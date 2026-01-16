@@ -1,94 +1,99 @@
 <p align="center">
-  <img src="custom_components/solax_local_api/images/logo.png" alt="SolaX Logo" width="200"/>
+  <img src="https://brands.home-assistant.io/_/solax_local_api/logo.png" alt="SolaX Logo" width="200"/>
 </p>
 
-# <img src="custom_components/solax_local_api/images/icon.png" alt="SolaX Logo" width="30"/> SolaX Inverter Local API
+# <img src="https://brands.home-assistant.io/_/solax_local_api/icon.png" alt="SolaX Icon" width="30"/> SolaX Inverter Local API
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg?style=for-the-badge)](https://github.com/hacs/integration)
 [![version](https://img.shields.io/github/v/release/GeroComp/Solax-local-API?style=for-the-badge)](https://github.com/GeroComp/Solax-local-API/releases)
 ![Discovery](https://img.shields.io/badge/discovery-DHCP-orange?style=for-the-badge)
 ![License](https://img.shields.io/github/license/GeroComp/Solax-local-API?style=for-the-badge)
+[![Czech](https://img.shields.io/badge/Language-Czech-red)](README_cs.md)
 
-Tato integrace umožňuje lokální monitorování střídače **SolaX Hybrid G4** v Home Assistant.
-Komunikace probíhá přímo přes lokální síť (LAN/WiFi), bez závislosti na cloudu a s bleskovou odezvou.
-
----
-
-## ✨ Vlastnosti
-- **Zero-Config Discovery**: Automatická detekce střídače v síti (není třeba hledat IP adresu).
-- **Rychlá odezva**: Aktualizace dat každých 6–10 sekund (nastavitelné).
-- **Lokální soukromí**: Data neopouštějí vaši síť.
-- **Efektivní sběr**: Využívá `DataUpdateCoordinator` pro hromadný odběr 45+ senzorů jedním dotazem.
-- **Dynamické ikony**: Ikony se mění podle stavu baterie, výroby panelů a směru toku energie.
-- **Nativní podpora**: Plně kompatibilní s Home Assistant Energy Dashboardem.
+This integration provides **local monitoring** for **SolaX Hybrid G4** inverters in Home Assistant.
+Communication is performed directly over the local network (LAN/WiFi) via HTTP requests to the Pocket Wi-Fi dongle, ensuring cloud independence and fast response times.
 
 ---
 
-## 🔍 Automatické vyhledávání (Discovery)
-Integrace podporuje funkci **Auto-Discovery**. Jakmile do své sítě připojíte střídač SolaX s Pocket Wi-Fi donglem, Home Assistant jej sám rozpozná.
-
-V sekci **Zařízení a služby** uvidíte nové oznámení:
-> **Zjištěno: SolaX** > *SolaX Power*
-
-Klikněte na tlačítko **Přidat** (Configure). Integrace automaticky předvyplní zjištěnou IP adresu, vy pouze zadáte přístupové heslo.
-
-> [!NOTE]
-> **Detekce střídače v síti může trvat 1 až 2 minuty.**
-> Pokud se zařízení ani po této době nezobrazí, přidejte integraci ručně a zadejte IP adresu Vašeho střídače přímo.
+## ✨ Features
+- **Zero-Config Discovery**: Automatic detection of the inverter on the network based on DHCP (searches for Espressif devices with Pocket Wi-Fi).
+- **Dynamic Interval**: Change the data update rate (6s to 5 min) instantly via a Select entity in the Dashboard.
+- **Robust Connection**: Optimistic startup – the integration loads even at night when the inverter is asleep (entities show as unavailable, but the integration does not fail).
+- **Efficient Data Collection**: Uses `DataUpdateCoordinator` to fetch all data in a single request.
+- **Smart Icons**: Icons dynamically change based on battery SoC, energy flow (import/export), and time of day.
+- **Energy Dashboard**: Fully compatible with the native Home Assistant Energy Dashboard.
 
 ---
 
-## ⚡ Nastavení Energy Dashboardu
-Pro správné zobrazení statistik v Energy panelu použijte tyto entity:
+## 🔍 Auto-Discovery
+The integration supports **Auto-Discovery**. Once the inverter with the Pocket Wi-Fi dongle connects to the network, Home Assistant will recognize it.
 
-| Sekce v Energy Dashboardu | Entita v Home Assistant |
+In the **Devices & Services** section, you will see a notification:
+> **Discovered: SolaX Local API** > *SolaX Power*
+
+Click **Configure**. The integration will automatically fill in the detected IP address; you only need to enter the API password (usually the dongle's registration number).
+
+---
+
+## ⚡ Energy Dashboard Setup
+For correct statistics in the Energy Panel, use the following entities:
+
+| Energy Dashboard Section | Home Assistant Entity |
 | :--- | :--- |
-| **Výroba panelů (Solar production)** | `sensor.solax_api_solar_total` |
-| **Odběr ze sítě (Grid consumption)** | `sensor.solax_api_grid_in_total` |
-| **Návrat do sítě (Return to grid)** | `sensor.solax_api_grid_out_total` |
-| **Nabíjení baterie (Battery storage - In)** | `sensor.solax_api_battery_in_total` |
-| **Vybíjení baterie (Battery storage - Out)** | `sensor.solax_api_battery_out_total` |
+| **Solar production** | `sensor.solax_solar_total` |
+| **Grid consumption** | `sensor.solax_grid_in_total` |
+| **Return to grid** | `sensor.solax_grid_out_total` |
+| **Battery storage - In** | `sensor.solax_battery_in_total` |
+| **Battery storage - Out** | `sensor.solax_battery_out_total` |
 
 > [!TIP]
-> Po prvním nastavení může trvat až 2 hodiny, než Home Assistant začne v Energy Dashboardu zobrazovat první grafy.
+> The `_total` sensors are of the `TOTAL_INCREASING` state class, which is required for long-term statistics.
 
 ---
 
-## ⚙️ Instalace
+## ⚙️ Installation & Configuration
 
-### Manuální instalace
-1. Stáhněte si repozitář a zkopírujte složku `solax_local_api` do adresáře `custom_components` ve vaší instalaci Home Assistant.
-2. **Restartujte Home Assistant.**
-3. Počkejte několik sekund – střídač by měl být automaticky detekován (vyskočí upozornění).
-4. Pokud se tak nestane, jděte do **Nastavení -> Zařízení a služby -> Přidat integraci** a vyhledejte **SolaX Inverter Local API**.
+### Manual Installation
+1. Download the repository and copy the `solax_local_api` folder into your `custom_components` directory.
+2. **Restart Home Assistant.**
+3. The integration should be automatically discovered. If not, add it via **Settings -> Devices & Services -> Add Integration -> SolaX Local API**.
 
----
-
-## 📝 Konfigurace
-Během nastavování budete vyzváni k zadání:
-- **IP adresa**: Předvyplněno automaticky při detekci, jinak zadejte ručně.
-- **Heslo / PIN**: Heslo pro přihlášení k Pocket Wi-Fi (obvykle natištěné na donglu).
-- **Interval aktualizace**: Doporučeno 6–10 sekund.
+### Configuration
+- **IP Address**: Local IP address of the Pocket Wi-Fi dongle.
+- **Password**: API password (often the same as the dongle serial number or registration code).
+- **Scan Interval**: Default is 10 seconds.
 
 ---
 
-## 📊 Hlavní sledované entity
-- **Výkon**: Celkový AC výkon, výkon z panelů (PV1+PV2), okamžitý výkon baterie.
-- **Baterie**: SoC (%), napětí, proud, teplota, BMS status.
-- **Energie**: Celková výroba, dnešní zisky, přetoky do sítě.
-- **Stavy**: Provozní režim střídače a systémový status (Normal, Fault, Wait).
-- **Diagnostika**: Sériové číslo střídače, verze firmware a nominální výkon.
+## 📊 Entities & Controls
+
+### Main Sensors
+The integration creates approximately 50 sensors, including:
+- **PV**: Voltage, Current, and Power for both strings (PV1, PV2).
+- **Battery**: SoC, Voltage, Current, Temperature, BMS Status, and Remaining Energy.
+- **Grid**: Import/Export (Current W and Total kWh).
+- **Inverter**: Temperatures, Frequency, Power Factor, Serial Number.
+
+### Controls (New)
+The integration now includes a `Select` entity:
+- **Scan Interval** (`select.solax_scan_interval`): Allows changing the polling rate on the fly.
+  - *Options:* 6s (Aggressive), 10s, ..., up to 5 minutes.
+  - Changes take effect immediately and are saved to the configuration.
+
+### Diagnostics
+- **Current Scan Interval** (`sensor.solax_interval_diagnostic`): Displays the actual time in seconds between the last data updates.
 
 ---
 
-## 📂 Struktura projektu
-- `__init__.py`: Inicializace a správa instance zařízení.
-- `sensor.py`: Logika senzorů a zpracování 32-bitových registrů.
-- `const.py`: Definice registrů, koeficientů a mapování stavů.
-- `config_flow.py`: UI pro nastavení a DHCP discovery logika.
-- `manifest.json`: Metadata a definice pro automatické vyhledávání.
-- `translations/`: Kompletní česká a anglická lokalizace.
+## 📂 Project Structure
+- `__init__.py`: Integration initialization and platform loading.
+- `coordinator.py`: Data fetching management and session handling.
+- `sensor.py`: Sensor definitions, data parsing, and icon logic.
+- `select.py`: Implementation of the scan interval switch.
+- `const.py`: Register tables, constants, and model mapping.
+- `config_flow.py`: Configuration flow and DHCP discovery.
+- `manifest.json`: Version and dependency definitions.
 
 ---
 
-**Disclaimer**: Tato integrace není oficiálním produktem společnosti SolaX Power. Použití je na vlastní riziko.
+**Disclaimer**: This integration is not an official product of SolaX Power. Use at your own risk.
