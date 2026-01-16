@@ -1,20 +1,12 @@
 import logging
-from datetime import timedelta
-import async_timeout
-
-from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.components.sensor import (
     SensorEntity, 
     SensorStateClass, 
     SensorDeviceClass
 )
-from homeassistant.helpers.update_coordinator import (
-    DataUpdateCoordinator, 
-    UpdateFailed, 
-    CoordinatorEntity
-)
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.helpers.entity import DeviceInfo
-from homeassistant.const import EntityCategory, CONF_HOST, CONF_PASSWORD
+from homeassistant.const import EntityCategory
 
 # Importování mapovacích tabulek z const.py
 from .const import DOMAIN, SENSOR_TYPES, SOLAX_MODES, SOLAX_STATES, SOLAX_INVERTER_TYPES
@@ -23,49 +15,50 @@ _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(hass, entry, async_add_entities):
     """Nastavení senzorů na základě konfigurace v UI."""
-    ip = entry.data[CONF_HOST]        
-    pwd = entry.data[CONF_PASSWORD]   
     
-    scan_interval = entry.data.get("scan_interval", 10)
+    # Získání již běžícího koordinátora
+    coordinator = hass.data[DOMAIN][entry.entry_id]
 
-    coordinator = SolaxUpdateCoordinator(hass, ip, pwd, scan_interval)
-    
-    try:
-        await coordinator.async_config_entry_first_refresh()
-    except Exception as ex:
-        _LOGGER.warning("Nepodařilo se navázat prvotní spojení se střídačem: %s", ex)
-
+    # 1. Standardní senzory
     entities = [SolaxSensor(coordinator, key, info, entry) for key, info in SENSOR_TYPES.items()]
+    
+    # 2. Diagnostický senzor intervalu
+    entities.append(SolaxIntervalDiagnostic(coordinator, entry))
+
     async_add_entities(entities)
 
-class SolaxUpdateCoordinator(DataUpdateCoordinator):
-    """Třída pro stahování dat ze střídače přes lokální API."""
 
-    def __init__(self, hass, ip, pwd, scan_interval):
-        super().__init__(
-            hass, _LOGGER, name="Solax Data",
-            update_interval=timedelta(seconds=scan_interval),
-        )
-        self.ip = ip
-        self.pwd = pwd
-        self.session = async_get_clientsession(hass)
+class SolaxIntervalDiagnostic(CoordinatorEntity, SensorEntity):
+    """Diagnostický senzor zobrazující aktuální interval aktualizace."""
 
-    async def _async_update_data(self):
-        url = f"http://{self.ip}/"
-        payload = f"optType=ReadRealTimeData&pwd={self.pwd}"
+    _attr_has_entity_name = True
+    _attr_name = "Aktuální interval skenování"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_native_unit_of_measurement = "s"
+    _attr_state_class = SensorStateClass.MEASUREMENT
+
+    def __init__(self, coordinator, entry):
+        super().__init__(coordinator)
+        self._entry = entry
+        self._attr_unique_id = f"solax_interval_diagnostic_{entry.entry_id}"
+        self.entity_id = f"sensor.solax_interval_diagnostic"
         
-        try:
-            async with async_timeout.timeout(10):
-                async with self.session.post(url, data=payload) as response:
-                    if response.status != 200:
-                        raise UpdateFailed(f"Chyba střídače: {response.status}")
-                    
-                    data = await response.json(content_type=None)
-                    if not data or "Data" not in data:
-                        raise UpdateFailed("Neúplná data ze střídače")
-                    return data
-        except Exception as err:
-            raise UpdateFailed(f"Chyba komunikace: {err}")
+        # DEFINICE IKONY PŘÍMO V INITU (Nejspolehlivější metoda)
+        self._attr_icon = "mdi:refresh-circle-outline"
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        return DeviceInfo(
+            identifiers={(DOMAIN, self._entry.entry_id)}
+        )
+
+    @property
+    def native_value(self):
+        """Vrátí aktuální nastavený interval v sekundách."""
+        if self.coordinator.update_interval:
+            return int(self.coordinator.update_interval.total_seconds())
+        return None
+
 
 class SolaxSensor(CoordinatorEntity, SensorEntity):
     """Reprezentace senzoru SolaX."""

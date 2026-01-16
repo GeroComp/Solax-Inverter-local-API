@@ -2,8 +2,8 @@
 
 DOMAIN = "solax_local_api"
 
-# Definice platforem
-PLATFORMS = ["sensor"]
+# Definice platforem - PŘIDÁNO "select"
+PLATFORMS = ["sensor", "select"]
 
 # Výchozí interval obnovy dat (sekundy)
 DEFAULT_SCAN_INTERVAL = 10

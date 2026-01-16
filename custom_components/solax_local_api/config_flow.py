@@ -5,7 +5,9 @@ import async_timeout
 import voluptuous as vol
 
 from homeassistant import config_entries
-from homeassistant.components import dhcp
+# PŮVODNĚ: from homeassistant.components import dhcp
+# NOVĚ: Importujeme ze správného umístění pro HA 2026.2+
+from homeassistant.helpers.service_info.dhcp import DhcpServiceInfo 
 from homeassistant.const import CONF_HOST, CONF_PASSWORD, CONF_SCAN_INTERVAL
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
@@ -44,7 +46,8 @@ class SolaxConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             return False
         return False
 
-    async def async_step_dhcp(self, discovery_info: dhcp.DhcpServiceInfo):
+    # ZMĚNA ZDE: Type hint je nyní přímo DhcpServiceInfo (bez "dhcp.")
+    async def async_step_dhcp(self, discovery_info: DhcpServiceInfo):
         """Automatický záchyt z DHCP."""
         hostname = (discovery_info.hostname or "").lower()
         
